@@ -31,21 +31,33 @@ const centerOf = (position: NodePosition): { x: number; y: number } => ({
   y: position.y + NODE_HEIGHT / 2,
 })
 
-// 現状のlayoutNodesは全ノードを同じY座標の一列に並べるため、接続点は
-// 中心同士ではなくノードの左右の辺にする。これにより線とラベルが
-// ノードの矩形を貫通しなくなる。今後レイアウトが縦方向にも展開される
-// 場合は、この水平前提の交点計算を見直す必要がある。
-const horizontalEdgeEndpoints = (
+// レイヤーDAGレイアウトではノードが縦にもずれるため、接続点は中心同士を
+// 結ぶ直線とノード矩形の交点にする(角度によらず矩形の辺で止まる)。
+const clipToRectBoundary = (
+  center: { x: number; y: number },
+  towards: { x: number; y: number },
+): { x: number; y: number } => {
+  const dx = towards.x - center.x
+  const dy = towards.y - center.y
+  if (dx === 0 && dy === 0) return center
+
+  const scaleX = dx !== 0 ? NODE_WIDTH / 2 / Math.abs(dx) : Infinity
+  const scaleY = dy !== 0 ? NODE_HEIGHT / 2 / Math.abs(dy) : Infinity
+  const scale = Math.min(scaleX, scaleY)
+
+  return { x: center.x + dx * scale, y: center.y + dy * scale }
+}
+
+const edgeEndpoints = (
   fromPosition: NodePosition,
   toPosition: NodePosition,
 ): { readonly from: { x: number; y: number }; readonly to: { x: number; y: number } } => {
   const fromCenter = centerOf(fromPosition)
   const toCenter = centerOf(toPosition)
-  const direction = toCenter.x >= fromCenter.x ? 1 : -1
 
   return {
-    from: { x: fromCenter.x + direction * (NODE_WIDTH / 2), y: fromCenter.y },
-    to: { x: toCenter.x - direction * (NODE_WIDTH / 2), y: toCenter.y },
+    from: clipToRectBoundary(fromCenter, toCenter),
+    to: clipToRectBoundary(toCenter, fromCenter),
   }
 }
 
@@ -106,7 +118,7 @@ const edgeView = (
   pipe(
     Option.all([findPosition(positions, edge.from), findPosition(positions, edge.to)]),
     Option.map(([fromPosition, toPosition]) => {
-      const { from, to } = horizontalEdgeEndpoints(fromPosition, toPosition)
+      const { from, to } = edgeEndpoints(fromPosition, toPosition)
       const midX = (from.x + to.x) / 2
       const midY = (from.y + to.y) / 2
 
@@ -121,6 +133,7 @@ const edgeView = (
               h.Y2(String(to.y)),
               h.Stroke('#94a3b8'),
               h.StrokeWidth('2'),
+              h.MarkerEnd('url(#edge-arrowhead)'),
             ],
             [],
           ),
@@ -185,6 +198,23 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Document => {
             h.Class('border border-stone-300 bg-white'),
           ],
           [
+            h.defs(
+              [],
+              [
+                h.marker(
+                  [
+                    h.Id('edge-arrowhead'),
+                    h.ViewBox('0 0 10 10'),
+                    h.RefX('9'),
+                    h.RefY('5'),
+                    h.MarkerWidth('7'),
+                    h.MarkerHeight('7'),
+                    h.Orient('auto-start-reverse'),
+                  ],
+                  [h.path([h.D('M 0 0 L 10 5 L 0 10 z'), h.Fill('#94a3b8')], [])],
+                ),
+              ],
+            ),
             h.g(
               [h.Transform(`translate(${CANVAS_PADDING}, ${CANVAS_PADDING})`)],
               [
