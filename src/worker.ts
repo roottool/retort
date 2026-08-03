@@ -1,6 +1,5 @@
 export default {
-    async fetch(request: Request): Promise<Response> {
+    async fetch(_request: Request): Promise<Response> {
         return new Response("ok", { status: 200 });
     },
 };
-
