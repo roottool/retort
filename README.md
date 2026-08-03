@@ -73,11 +73,32 @@ Namespace it binds to, each tagged with a `sid` (the target's `logicalId`) and a
 reconstruct the full dependency graph — nodes come from each file's `logicalId` /
 `resourceType`, edges from `bindings`.
 
+## Built on Effect — testing & devtools
+
+The viewer itself is as much a demo of Foldkit's Effect-based testing/devtools story as it
+is a demo of the graph it renders:
+
+- **Schema-validated at every boundary.** `scripts/parse-alchemy.ts` decodes each raw
+  Alchemy state file with an Effect `Schema.Struct` before it ever becomes a node/edge —
+  unrelated fields (`attr`, `props`, account IDs, ...) are silently dropped rather than
+  leaking into `graph.generated.json`. `src/main.ts` decodes that generated file again at
+  runtime with `Schema.decodeUnknownOption`, so a malformed or stale
+  `graph.generated.json` falls back to `dummyGraph` instead of crashing the app.
+- **`update` tested with no DOM at all.** `src/story.test.ts` uses `foldkit/story`'s
+  `given`/`message`/`model` DSL to dispatch messages straight at the `update` function and
+  assert on the resulting model and emitted commands.
+- **`view` tested without a browser.** `src/scene.test.ts` uses `foldkit/scene`'s
+  `click`/`selector`/`text` DSL to drive the real `view` + `update` pair under
+  `happy-dom` and assert on rendered output — e.g. clicking `#Bucket` and checking the
+  detail panel text.
+- **Time-travel devtools, live.** `src/entry.ts` wires `@foldkit/devtools`'s `overlay`
+  into the running app, giving Elm-style time travel in the browser. The
+  `foldkit-devtools` MCP server (`.mcp.json`) exposes the same runtime to AI agents: list
+  dispatched messages, replay to any keyframe, diff two models, or dispatch synthetic
+  messages, all without adding a single `console.log`.
+
 ## Known limitations
 
-- The current layout (`src/layout.ts`) places nodes in a single deterministic row. It
-  does not yet account for edge direction or avoid crossings for larger graphs — see the
-  `TODO` there if you want to improve it.
 - No file-watching / live reload of `.alchemy/state/` yet; re-run `bun run parse-alchemy`
   after each deploy.
 
