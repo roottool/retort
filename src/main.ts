@@ -26,14 +26,15 @@ export type Message = typeof Message.Type
 const makeInitialModel = (graph: Graph): Model =>
   Model.make({ graph, selectedNodeId: Option.none() })
 
-// テスト(story/scene)は常にダミーデータで決定的に動くよう、これは
-// graph.generated.json の有無に左右されない固定値にする。
+// So tests (story/scene) always run deterministically against dummy data,
+// this is a fixed value that doesn't depend on whether graph.generated.json
+// exists.
 export const initialModel = makeInitialModel(dummyGraph)
 
-// `bun run parse-alchemy` の出力(scripts/parse-alchemy.ts参照)が存在すれば
-// 実行時にそれを使い、なければダミーデータにフォールバックする。
-// import.meta.glob はファイルが無くてもビルドエラーにならないため、
-// `.alchemy/deploy`未実行のクローン直後でもアプリが動く。
+// If the output of `bun run parse-alchemy` (see scripts/parse-alchemy.ts)
+// exists, use it at runtime; otherwise fall back to dummy data.
+// import.meta.glob doesn't fail the build even when the file is missing, so
+// the app still works right after a clone, before `.alchemy/deploy` has run.
 const generatedGraphModules = import.meta.glob<{ default: unknown }>(
   './graph.generated.json',
   { eager: true },

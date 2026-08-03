@@ -1,8 +1,8 @@
 import { Graph } from './schema'
 
-// CONTEXT.md記載の3リソース構成(R2 Bucket + KV Namespace + Worker)を
-// サニタイズした状態で再現したダミーデータ。実際の .alchemy/ 配下の
-// stateファイルに含まれるアカウントID等の実データは含めない。
+// Dummy data reproducing the 3-resource stack from CONTEXT.md (R2 Bucket +
+// KV Namespace + Worker) in sanitized form. Excludes real data such as
+// account IDs found in actual .alchemy/ state files.
 export const dummyGraph: Graph = Graph.make({
   nodes: [
     { id: 'Bucket', resourceType: 'Cloudflare.R2.Bucket' },

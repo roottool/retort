@@ -9,11 +9,13 @@ export type NodePosition = {
 const LAYER_SPACING_X = 320
 const ROW_SPACING_Y = 120
 
-// graph.edges の向き(from = bindingしている側 → to = binding先)に沿って、
-// 一度も binding先になっていないノード(典型的にはWorker)をレイヤー0とし、
-// エッジをたどるごとに +1 する。DAGの最長経路はノード数-1ホップを超えない
-// ので、パス数をノード数で打ち切れば必ず収束する。外部(.alchemy/配下)から
-// 読んだデータに想定外の循環bindingが混ざっていても無限ループしない。
+// Following the direction of graph.edges (from = the side doing the binding
+// → to = the binding target), nodes that are never a binding target
+// (typically the Worker) start at layer 0, and each edge traversal adds +1.
+// A DAG's longest path never exceeds node-count - 1 hops, so capping the
+// number of passes at the node count guarantees convergence. This also means
+// no infinite loop even if data read from an external source (.alchemy/)
+// contains an unexpected binding cycle.
 const assignLayers = (graph: Graph): Map<string, number> => {
   const layers = new Map(graph.nodes.map(node => [node.id, 0]))
 
@@ -45,10 +47,11 @@ const groupByLayer = (graph: Graph, layers: Map<string, number>): string[][] => 
   return columns
 }
 
-// 隣接列(neighborColumn)内での並び順の平均を各ノードのバリセンターとし、
-// それで昇順に並べ替える。エッジ交差を減らすための簡易ヒューリスティック。
-// 隣接ノードを持たないノードは末尾に固定し、同点はid昇順でタイブレークして
-// 決定的な結果にする。
+// Each node's barycenter is the average position of its neighbors within
+// the adjacent column (neighborColumn), and nodes are sorted ascending by
+// that value. A simple heuristic for reducing edge crossings. Nodes with no
+// neighbors are pinned to the end, and ties are broken by ascending id so
+// the result stays deterministic.
 const barycenterOrder = (
   column: ReadonlyArray<string>,
   neighborColumn: ReadonlyArray<string>,
@@ -78,9 +81,9 @@ const predecessorsOf = (edges: ReadonlyArray<GraphEdge>, nodeId: string): string
 const successorsOf = (edges: ReadonlyArray<GraphEdge>, nodeId: string): string[] =>
   edges.filter(edge => edge.from === nodeId).map(edge => edge.to)
 
-// 左→右のバリセンター整列を1パス、続けて右→左を1パス行う
-// (Sugiyama式レイアウトの簡易版)。小規模グラフを想定した用途なので、
-// 収束判定はせず固定2パスに留める。
+// One left→right barycenter pass, followed by one right→left pass (a
+// simplified Sugiyama-style layout). Since this is meant for small graphs,
+// we skip convergence checking and stick to a fixed 2 passes.
 const reorderColumns = (
   columns: ReadonlyArray<ReadonlyArray<string>>,
   edges: ReadonlyArray<GraphEdge>,
@@ -106,8 +109,9 @@ export const layoutNodes = (graph: Graph): ReadonlyArray<NodePosition> => {
   const maxRows = Math.max(1, ...columns.map(column => column.length))
 
   return columns.flatMap((column, layerIndex) => {
-    // 短い列は縦方向に中央揃えする。オフセットは常に0以上なので、
-    // どの列も y が負にならず、SVGの描画範囲からはみ出さない。
+    // Shorter columns are centered vertically. The offset is always >= 0,
+    // so no column's y goes negative, keeping everything inside the SVG's
+    // drawing area.
     const verticalOffset = ((maxRows - column.length) / 2) * ROW_SPACING_Y
 
     return column.map((id, rowIndex) => ({

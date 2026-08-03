@@ -1,8 +1,9 @@
 import { Schema as S } from 'effect'
 
-// GraphNode/GraphEdge/Graph は Alchemy の .alchemy/ state から抽出した
-// リソース依存グラフを表す。bindings 側(参照する側)だけを見れば
-// グラフは完全に組めるため、Edge の向きは「bindingsしている側 -> binding先」。
+// GraphNode/GraphEdge/Graph represent the resource dependency graph extracted
+// from Alchemy's .alchemy/ state. Looking only at the bindings side (the
+// referencing side) is enough to reconstruct the full graph, so an edge's
+// direction is "the side doing the binding -> the binding target".
 
 export const GraphNode = S.Struct({
   id: S.String,

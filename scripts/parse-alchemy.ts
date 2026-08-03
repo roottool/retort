@@ -9,8 +9,9 @@ const STATE_ROOT = '.alchemy/state'
 const STACK_OUTPUT_BASENAME = '__stack_output__.json'
 const OUTPUT_PATH = 'src/graph.generated.json'
 
-// .alchemy/ の stateファイルのうち、グラフ抽出に必要な部分だけを検証する。
-// attr/props等の余剰プロパティは S.Struct が黙って無視するので拾わない。
+// Only validates the parts of an .alchemy/ state file needed to extract the
+// graph. Extra properties like attr/props are silently ignored by S.Struct,
+// so they aren't picked up here.
 const AlchemyBindingDetail = S.Struct({
   type: S.String,
 })

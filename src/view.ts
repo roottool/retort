@@ -31,8 +31,10 @@ const centerOf = (position: NodePosition): { x: number; y: number } => ({
   y: position.y + NODE_HEIGHT / 2,
 })
 
-// レイヤーDAGレイアウトではノードが縦にもずれるため、接続点は中心同士を
-// 結ぶ直線とノード矩形の交点にする(角度によらず矩形の辺で止まる)。
+// With the layered DAG layout, nodes can also shift vertically, so
+// connection points are the intersection of the line joining the two
+// centers with each node's rectangle (stops at the rectangle's edge
+// regardless of angle).
 const clipToRectBoundary = (
   center: { x: number; y: number },
   towards: { x: number; y: number },
