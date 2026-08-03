@@ -9,10 +9,10 @@ describe('update', () => {
     story(
       update,
       given(initialModel),
-      message(ClickedNode({ id: 'Bucket' })),
+      message(ClickedNode({ id: 'Sessions' })),
       Command.expectNone(),
       model(model => {
-        expect(model.selectedNodeId).toEqual(Option.some('Bucket'))
+        expect(model.selectedNodeId).toEqual(Option.some('Sessions'))
       }),
     )
   })
@@ -21,7 +21,7 @@ describe('update', () => {
     story(
       update,
       given(initialModel),
-      message(ClickedNode({ id: 'Bucket' })),
+      message(ClickedNode({ id: 'Sessions' })),
       message(ClickedNode({ id: 'Api' })),
       model(model => {
         expect(model.selectedNodeId).toEqual(Option.some('Api'))

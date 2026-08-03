@@ -10,14 +10,21 @@ export default Alchemy.Stack(
         state: State.localState(),
     },
     Effect.gen(function* () {
-        const bucket = yield* Cloudflare.R2.Bucket("Bucket");
         const kv = yield* Cloudflare.KV.Namespace("Sessions");
+        const db = yield* Cloudflare.D1.Database("Db");
+        const auth = yield* Cloudflare.Worker("Auth", {
+            main: "./src/authWorker.ts",
+            env: { Db: db },
+        });
         const worker = yield* Cloudflare.Worker("Api", {
             main: "./src/worker.ts",
-            env: { Bucket: bucket, Sessions: kv },
+            env: { Sessions: kv, Db: db, Auth: auth },
+            // Serves this project's own built viewer (`bun run build`), so the
+            // deployed stack's dependency graph includes the very Worker
+            // rendering it.
+            assets: "./dist",
         });
         return {
-            bucketName: bucket.bucketName,
             workerUrl: worker.url,
         };
     }),

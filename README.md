@@ -15,6 +15,9 @@ Alchemy can persist deployment state as plain JSON files on disk (via
 state, extracts a dependency graph of your cloud resources (which resource binds to
 which), and renders it as an interactive diagram in the browser.
 
+The sample stack's `Api` Worker also serves this project's own built viewer as a static
+asset (see `alchemy.run.ts`) — so once deployed, the graph it shows by default is its own.
+
 ## Scope
 
 - **Cloudflare only.** Other providers (AWS, etc.) are out of scope.
@@ -23,8 +26,7 @@ which), and renders it as an interactive diagram in the browser.
 
 ## Prerequisites
 
-- A Cloudflare account, with **R2 enabled from the dashboard** (deploys fail with
-  `Forbidden: Please enable R2 through the Cloudflare Dashboard.` otherwise).
+- A Cloudflare account.
 - [Bun](https://bun.sh).
 
 ## Getting started
@@ -32,21 +34,27 @@ which), and renders it as an interactive diagram in the browser.
 ```bash
 bun install
 
-# Deploy the sample stack (R2 Bucket + KV Namespace + Worker) to Cloudflare.
-# This writes local state files under .alchemy/state/ (gitignored — they contain
-# real account/resource identifiers).
+# Build the viewer so the Api Worker has something under ./dist to deploy as
+# a static asset (see alchemy.run.ts).
+bun run build
+
+# Deploy the sample stack (KV Namespace + D1 Database + 2 Workers) to
+# Cloudflare. This writes local state files under .alchemy/state/ (gitignored
+# — they contain real account/resource identifiers).
 bunx alchemy deploy
 
 # Read .alchemy/state/**/*.json and write src/graph.generated.json.
 bun run parse-alchemy
 
-# Start the viewer.
+# Start the dev server (hot-reloading; separate from the static build above).
 bun run dev
 ```
 
 Open the dev server URL and you'll see each resource as a labeled box, with edges
-showing which resource binds to which (e.g. a Worker binding an R2 Bucket and a KV
-Namespace).
+showing which resource binds to which (e.g. the `Api` Worker binding a KV Namespace, a
+D1 Database, the `Auth` Worker via a service binding, and the static assets it serves).
+Clicking a node highlights it and its directly connected neighbors, dimming the rest of
+the graph.
 
 If you skip the deploy/parse steps, the app falls back to a small built-in dummy graph
 (same shape as the sample stack) so the viewer still renders something out of the box.
@@ -67,11 +75,16 @@ If you skip the deploy/parse steps, the app falls back to a small built-in dummy
 ## How the graph is derived
 
 Each Alchemy state file (one per resource) has a `bindings` array listing what that
-resource depends on. A Worker's state file, for example, lists the R2 Bucket and KV
-Namespace it binds to, each tagged with a `sid` (the target's `logicalId`) and a binding
-`type` (`r2_bucket`, `kv_namespace`, etc.). Reading `bindings` alone is enough to
-reconstruct the full dependency graph — nodes come from each file's `logicalId` /
-`resourceType`, edges from `bindings`.
+resource depends on. The `Api` Worker's state file, for example, lists the KV Namespace,
+D1 Database, and `Auth` Worker it binds to, each tagged with a `sid` (the target's
+`logicalId`) and a binding `type` (`kv_namespace`, `d1`, `service`, etc.). Reading
+`bindings` alone is enough to reconstruct almost the full dependency graph — nodes come
+from each file's `logicalId` / `resourceType`, edges from `bindings`.
+
+The one exception is the static assets a Worker serves (`assets` in `alchemy.run.ts`):
+that's a plain prop on the Worker's own state file, not a `bindings` entry, so
+`scripts/parse-alchemy.ts` special-cases it — a Worker with `props.assets` set gets a
+synthetic `Viewer` node and an edge pointing at it.
 
 ## Built on Effect — testing & devtools
 
@@ -101,6 +114,10 @@ is a demo of the graph it renders:
 
 - No file-watching / live reload of `.alchemy/state/` yet; re-run `bun run parse-alchemy`
   after each deploy.
+- The `props.assets` → synthetic `Viewer` node mapping (see above) is based on Alchemy's
+  TypeScript type declarations, not a verified real deploy — if the shape differs once
+  you actually deploy, adjust `resourcesWithAssets` in `scripts/parse-alchemy.ts`
+  accordingly.
 
 ## License
 

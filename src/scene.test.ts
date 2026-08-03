@@ -9,14 +9,19 @@ describe('scene', () => {
     scene(
       { update, view },
       given(initialModel),
-      expect(text('Bucket')).toExist(),
-      expect(text('Sessions')).toExist(),
       expect(text('Api')).toExist(),
-      expect(text('Cloudflare.R2.Bucket')).toExist(),
-      expect(text('Cloudflare.KV.Namespace')).toExist(),
+      expect(text('Auth')).toExist(),
+      expect(text('Sessions')).toExist(),
+      expect(text('Db')).toExist(),
+      expect(text('Viewer')).toExist(),
       expect(text('Cloudflare.Worker')).toExist(),
-      expect(text('r2_bucket')).toExist(),
+      expect(text('Cloudflare.KV.Namespace')).toExist(),
+      expect(text('Cloudflare.D1Database')).toExist(),
+      expect(text('Cloudflare.Workers.Assets')).toExist(),
       expect(text('kv_namespace')).toExist(),
+      expect(text('d1')).toExist(),
+      expect(text('service')).toExist(),
+      expect(text('assets')).toExist(),
     )
   })
 
@@ -27,8 +32,23 @@ describe('scene', () => {
       expect(
         text('ノードをクリックすると詳細が表示されます'),
       ).toExist(),
-      click(selector('#Bucket')),
-      expect(text('選択中: Bucket (Cloudflare.R2.Bucket)')).toExist(),
+      click(selector('#Sessions')),
+      expect(text('選択中: Sessions (Cloudflare.KV.Namespace)')).toExist(),
+    )
+  })
+
+  test('clicking a node highlights its neighbors and dims the rest', () => {
+    scene(
+      { update, view },
+      given(initialModel),
+      // Auth only connects to Api and Db directly; Sessions and Viewer are
+      // reachable from Api but not from Auth, so they stay dimmed.
+      click(selector('#Auth')),
+      expect(selector('#Api')).toHaveClass('node-neighbor'),
+      expect(selector('#Db')).toHaveClass('node-neighbor'),
+      expect(selector('#Sessions')).not.toHaveClass('node-neighbor'),
+      expect(selector('#Sessions')).toHaveAttr('opacity', '0.35'),
+      expect(selector('#Viewer')).toHaveAttr('opacity', '0.35'),
     )
   })
 })

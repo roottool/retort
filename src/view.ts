@@ -14,10 +14,101 @@ const NODE_HEIGHT = 64
 const CANVAS_PADDING = 40
 
 const resourceTypeFill = (resourceType: string): string => {
-  if (resourceType.includes('R2')) return '#ea580c'
+  // 'Cloudflare.Workers.Assets' also contains 'Worker', so this check must
+  // come first.
+  if (resourceType.includes('Assets')) return '#d97706'
+  if (resourceType.includes('D1')) return '#7c3aed'
   if (resourceType.includes('KV')) return '#2563eb'
   if (resourceType.includes('Worker')) return '#16a34a'
   return '#64748b'
+}
+
+// Highlight state for a node/edge relative to the current selection: the
+// selected node itself, a node/edge directly connected to it, or everything
+// else (dimmed so the connection stands out).
+type NodeHighlight = 'selected' | 'neighbor' | 'dimmed' | 'normal'
+type EdgeHighlight = 'touching' | 'dimmed' | 'normal'
+
+const neighborsOf = (
+  edges: ReadonlyArray<GraphEdge>,
+  id: string,
+): ReadonlySet<string> => {
+  const neighbors = new Set<string>()
+  for (const edge of edges) {
+    if (edge.from === id) neighbors.add(edge.to)
+    if (edge.to === id) neighbors.add(edge.from)
+  }
+  return neighbors
+}
+
+const nodeHighlightOf = (
+  selectedNodeId: Option.Option<string>,
+  neighbors: ReadonlySet<string>,
+  nodeId: string,
+): NodeHighlight =>
+  pipe(
+    selectedNodeId,
+    Option.match({
+      onNone: () => 'normal' as const,
+      onSome: selectedId => {
+        if (nodeId === selectedId) return 'selected' as const
+        if (neighbors.has(nodeId)) return 'neighbor' as const
+        return 'dimmed' as const
+      },
+    }),
+  )
+
+const edgeHighlightOf = (
+  selectedNodeId: Option.Option<string>,
+  edge: GraphEdge,
+): EdgeHighlight =>
+  pipe(
+    selectedNodeId,
+    Option.match({
+      onNone: () => 'normal' as const,
+      onSome: selectedId =>
+        edge.from === selectedId || edge.to === selectedId
+          ? ('touching' as const)
+          : ('dimmed' as const),
+    }),
+  )
+
+const NODE_STROKE: Record<NodeHighlight, string> = {
+  selected: '#1e293b',
+  neighbor: '#f59e0b',
+  dimmed: 'none',
+  normal: 'none',
+}
+
+const NODE_OPACITY: Record<NodeHighlight, string> = {
+  selected: '1',
+  neighbor: '1',
+  dimmed: '0.35',
+  normal: '1',
+}
+
+const EDGE_STROKE: Record<EdgeHighlight, string> = {
+  touching: '#f59e0b',
+  dimmed: '#94a3b8',
+  normal: '#94a3b8',
+}
+
+const EDGE_WIDTH: Record<EdgeHighlight, string> = {
+  touching: '3',
+  dimmed: '2',
+  normal: '2',
+}
+
+const EDGE_OPACITY: Record<EdgeHighlight, string> = {
+  touching: '1',
+  dimmed: '0.25',
+  normal: '1',
+}
+
+const EDGE_MARKER: Record<EdgeHighlight, string> = {
+  touching: 'url(#edge-arrowhead-highlight)',
+  dimmed: 'url(#edge-arrowhead)',
+  normal: 'url(#edge-arrowhead)',
 }
 
 const findPosition = (
@@ -66,7 +157,7 @@ const edgeEndpoints = (
 const nodeView = (
   node: GraphNode,
   position: NodePosition,
-  isSelected: boolean,
+  highlight: NodeHighlight,
   h: HtmlBuilder<Message>,
 ): Html =>
   h.g(
@@ -74,7 +165,10 @@ const nodeView = (
       h.Id(node.id),
       h.Transform(`translate(${position.x}, ${position.y})`),
       h.OnClick(ClickedNode({ id: node.id })),
-      h.Class('cursor-pointer'),
+      h.Class(
+        highlight === 'neighbor' ? 'cursor-pointer node-neighbor' : 'cursor-pointer',
+      ),
+      h.Opacity(NODE_OPACITY[highlight]),
     ],
     [
       h.rect(
@@ -83,7 +177,7 @@ const nodeView = (
           h.Height(String(NODE_HEIGHT)),
           h.Rx('8'),
           h.Fill(resourceTypeFill(node.resourceType)),
-          h.Stroke(isSelected ? '#1e293b' : 'none'),
+          h.Stroke(NODE_STROKE[highlight]),
           h.StrokeWidth('3'),
         ],
         [],
@@ -115,6 +209,7 @@ const nodeView = (
 const edgeView = (
   edge: GraphEdge,
   positions: ReadonlyArray<NodePosition>,
+  highlight: EdgeHighlight,
   h: HtmlBuilder<Message>,
 ): Html =>
   pipe(
@@ -125,7 +220,10 @@ const edgeView = (
       const midY = (from.y + to.y) / 2
 
       return h.g(
-        [],
+        [
+          h.Class(highlight === 'touching' ? 'edge-highlighted' : ''),
+          h.Opacity(EDGE_OPACITY[highlight]),
+        ],
         [
           h.line(
             [
@@ -133,9 +231,9 @@ const edgeView = (
               h.Y1(String(from.y)),
               h.X2(String(to.x)),
               h.Y2(String(to.y)),
-              h.Stroke('#94a3b8'),
-              h.StrokeWidth('2'),
-              h.MarkerEnd('url(#edge-arrowhead)'),
+              h.Stroke(EDGE_STROKE[highlight]),
+              h.StrokeWidth(EDGE_WIDTH[highlight]),
+              h.MarkerEnd(EDGE_MARKER[highlight]),
             ],
             [],
           ),
@@ -185,6 +283,11 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Document => {
   const positions = layoutNodes(model.graph)
   const width = svgWidth(positions)
   const height = svgHeight(positions)
+  const neighbors = pipe(
+    model.selectedNodeId,
+    Option.map(id => neighborsOf(model.graph.edges, id)),
+    Option.getOrElse((): ReadonlySet<string> => new Set()),
+  )
 
   return {
     title: 'retort — Alchemy graph viewer',
@@ -215,12 +318,26 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Document => {
                   ],
                   [h.path([h.D('M 0 0 L 10 5 L 0 10 z'), h.Fill('#94a3b8')], [])],
                 ),
+                h.marker(
+                  [
+                    h.Id('edge-arrowhead-highlight'),
+                    h.ViewBox('0 0 10 10'),
+                    h.RefX('9'),
+                    h.RefY('5'),
+                    h.MarkerWidth('7'),
+                    h.MarkerHeight('7'),
+                    h.Orient('auto-start-reverse'),
+                  ],
+                  [h.path([h.D('M 0 0 L 10 5 L 0 10 z'), h.Fill('#f59e0b')], [])],
+                ),
               ],
             ),
             h.g(
               [h.Transform(`translate(${CANVAS_PADDING}, ${CANVAS_PADDING})`)],
               [
-                ...Array.map(model.graph.edges, edge => edgeView(edge, positions, h)),
+                ...Array.map(model.graph.edges, edge =>
+                  edgeView(edge, positions, edgeHighlightOf(model.selectedNodeId, edge), h),
+                ),
                 ...Array.map(model.graph.nodes, node =>
                   pipe(
                     findPosition(positions, node.id),
@@ -228,7 +345,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Document => {
                       nodeView(
                         node,
                         position,
-                        Option.contains(model.selectedNodeId, node.id),
+                        nodeHighlightOf(model.selectedNodeId, neighbors, node.id),
                         h,
                       ),
                     ),
