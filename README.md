@@ -1,12 +1,18 @@
 # retort
 
-A one-off visualization tool for [Alchemy](https://alchemy.run) (Infrastructure-as-Effects)
-deployment state, rendered with [Foldkit](https://foldkit.dev) (an Elm-like frontend
-framework built on Effect).
+A web page that shows you the infrastructure that is currently serving it.
 
-Both Alchemy and Foldkit are built on [Effect](https://effect.website), the TypeScript
-functional ecosystem — that shared foundation is the reason for pairing them, and for the
-name: Alchemy's own metaphor is a *retort*, the vessel used in distillation.
+Deploy the sample stack, open the URL, and by default you're looking at a live diagram of
+the exact Cloudflare resources rendering that diagram in front of you — the `Api` Worker
+serves this viewer as a static asset, and the viewer's own default graph is that same
+Worker's deployment state.
+
+Under the hood, `retort` reads the deployment state of a Cloudflare stack managed by
+[Alchemy](https://alchemy.run) (Infrastructure-as-Effects), extracts a dependency graph of
+the cloud resources, and renders it with [Foldkit](https://foldkit.dev) (an Elm-like
+frontend framework). Both happen to be built on [Effect](https://effect.website), the
+TypeScript functional ecosystem — which is also where the name comes from: Alchemy's own
+metaphor is a *retort*, the vessel used in distillation.
 
 ## What it does
 
@@ -114,10 +120,6 @@ is a demo of the graph it renders:
 
 - No file-watching / live reload of `.alchemy/state/` yet; re-run `bun run parse-alchemy`
   after each deploy.
-- The `props.assets` → synthetic `Viewer` node mapping (see above) is based on Alchemy's
-  TypeScript type declarations, not a verified real deploy — if the shape differs once
-  you actually deploy, adjust `resourcesWithAssets` in `scripts/parse-alchemy.ts`
-  accordingly.
 
 ## License
 

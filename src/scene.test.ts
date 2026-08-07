@@ -29,11 +29,9 @@ describe('scene', () => {
     scene(
       { update, view },
       given(initialModel),
-      expect(
-        text('ノードをクリックすると詳細が表示されます'),
-      ).toExist(),
+      expect(text('Click a node to see its details')).toExist(),
       click(selector('#Sessions')),
-      expect(text('選択中: Sessions (Cloudflare.KV.Namespace)')).toExist(),
+      expect(text('Selected: Sessions (Cloudflare.KV.Namespace)')).toExist(),
     )
   })
 
