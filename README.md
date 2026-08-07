@@ -12,7 +12,9 @@ Under the hood, `retort` reads the deployment state of a Cloudflare stack manage
 the cloud resources, and renders it with [Foldkit](https://foldkit.dev) (an Elm-like
 frontend framework). Both happen to be built on [Effect](https://effect.website), the
 TypeScript functional ecosystem — which is also where the name comes from: Alchemy's own
-metaphor is a *retort*, the vessel used in distillation.
+metaphor is a *retort*, the vessel used in distillation. The graph leans into that metaphor
+visually too: nodes render as flasks filled with a gradient liquid, and dependency edges
+carry a flowing droplet animation.
 
 ## What it does
 
