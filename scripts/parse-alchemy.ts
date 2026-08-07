@@ -67,7 +67,7 @@ const readResourceState = async (
 const main = async (): Promise<void> => {
   if (!existsSync(STATE_ROOT)) {
     console.error(
-      `${STATE_ROOT} が見つかりません。先に \`bun alchemy deploy\` を実行してください。`,
+      `${STATE_ROOT} not found. Run \`bun alchemy deploy\` first.`,
     )
     process.exit(1)
   }
@@ -110,7 +110,7 @@ const main = async (): Promise<void> => {
 
   await Bun.write(OUTPUT_PATH, `${JSON.stringify(graph, null, 2)}\n`)
   console.log(
-    `${OUTPUT_PATH} に ${graph.nodes.length} ノード、${graph.edges.length} エッジを書き出しました。`,
+    `Wrote ${graph.nodes.length} node(s) and ${graph.edges.length} edge(s) to ${OUTPUT_PATH}`,
   )
 }
 
