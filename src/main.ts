@@ -9,8 +9,8 @@ import { Graph } from './schema'
 // MODEL
 
 export const Model = S.Struct({
-  graph: Graph,
-  selectedNodeId: S.Option(S.String),
+	graph: Graph,
+	selectedNodeId: S.Option(S.String),
 })
 export type Model = typeof Model.Type
 
@@ -24,7 +24,7 @@ export type Message = typeof Message.Type
 // INIT
 
 const makeInitialModel = (graph: Graph): Model =>
-  Model.make({ graph, selectedNodeId: Option.none() })
+	Model.make({ graph, selectedNodeId: Option.none() })
 
 // So tests (story/scene) always run deterministically against dummy data,
 // this is a fixed value that doesn't depend on whether graph.generated.json
@@ -35,22 +35,21 @@ export const initialModel = makeInitialModel(dummyGraph)
 // exists, use it at runtime; otherwise fall back to dummy data.
 // import.meta.glob doesn't fail the build even when the file is missing, so
 // the app still works right after a clone, before `.alchemy/deploy` has run.
-const generatedGraphModules = import.meta.glob<{ default: unknown }>(
-  './graph.generated.json',
-  { eager: true },
-)
+const generatedGraphModules = import.meta.glob<{ default: unknown }>('./graph.generated.json', {
+	eager: true,
+})
 
 const resolveGraph = (): Graph =>
-  pipe(
-    Option.fromNullishOr(generatedGraphModules['./graph.generated.json']),
-    Option.map(generatedModule => generatedModule.default),
-    Option.flatMap(data => S.decodeUnknownOption(Graph)(data)),
-    Option.getOrElse(() => dummyGraph),
-  )
+	pipe(
+		Option.fromNullishOr(generatedGraphModules['./graph.generated.json']),
+		Option.map(generatedModule => generatedModule.default),
+		Option.flatMap(data => S.decodeUnknownOption(Graph)(data)),
+		Option.getOrElse(() => dummyGraph),
+	)
 
 export const init: Runtime.ApplicationInit<Model, Message> = () => [
-  makeInitialModel(resolveGraph()),
-  [],
+	makeInitialModel(resolveGraph()),
+	[],
 ]
 
 // UPDATE
@@ -58,6 +57,6 @@ export const init: Runtime.ApplicationInit<Model, Message> = () => [
 type UpdateReturn = readonly [Model, ReadonlyArray<Command.Command<Message>>]
 
 export const update = (model: Model, message: Message): UpdateReturn => [
-  evo(model, { selectedNodeId: () => Option.some(message.id) }),
-  [],
+	evo(model, { selectedNodeId: () => Option.some(message.id) }),
+	[],
 ]
