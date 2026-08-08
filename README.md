@@ -12,7 +12,7 @@ Under the hood, `retort` reads the deployment state of a Cloudflare stack manage
 the cloud resources, and renders it with [Foldkit](https://foldkit.dev) (an Elm-like
 frontend framework). Both happen to be built on [Effect](https://effect.website), the
 TypeScript functional ecosystem — which is also where the name comes from: Alchemy's own
-metaphor is a *retort*, the vessel used in distillation. The graph leans into that metaphor
+metaphor is a _retort_, the vessel used in distillation. The graph leans into that metaphor
 visually too: nodes render as flasks filled with a gradient liquid, and dependency edges
 carry a flowing droplet animation.
 
@@ -69,16 +69,16 @@ If you skip the deploy/parse steps, the app falls back to a small built-in dummy
 
 ## Scripts
 
-| Command                 | Description                                              |
-| ------------------------ | --------------------------------------------------------- |
-| `bun run dev`             | Start the Vite dev server                                 |
-| `bun run build`           | Build for production                                       |
-| `bun run preview`         | Preview the production build                                |
-| `bun run parse-alchemy`   | Regenerate `src/graph.generated.json` from `.alchemy/state/` |
-| `bun run typecheck`       | Type-check with `tsc --noEmit`                              |
-| `bun run test`            | Run the test suite (`vitest`)                               |
-| `bun run lint`            | Lint `src/` (`oxlint`)                                      |
-| `bun run format`          | Format the repo (`prettier`)                                |
+| Command                 | Description                                                  |
+| ----------------------- | ------------------------------------------------------------ |
+| `bun run dev`           | Start the Vite dev server                                    |
+| `bun run build`         | Build for production                                         |
+| `bun run preview`       | Preview the production build                                 |
+| `bun run parse-alchemy` | Regenerate `src/graph.generated.json` from `.alchemy/state/` |
+| `bun run typecheck`     | Type-check with `tsc --noEmit`                               |
+| `bun run test`          | Run the test suite (`vitest`)                                |
+| `bun run lint`          | Lint `src/` (`oxlint`)                                       |
+| `bun run format`        | Format the repo (`prettier`)                                 |
 
 ## How the graph is derived
 

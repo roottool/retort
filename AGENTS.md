@@ -40,12 +40,12 @@ type UpdateReturn = readonly [Model, ReadonlyArray<Command<Message>>]
 const withUpdateReturn = M.withReturnType<UpdateReturn>()
 
 const update = (model: Model, message: Message): UpdateReturn =>
-  M.value(message).pipe(
-    withUpdateReturn,
-    M.tagsExhaustive({
-      ClickedIncrement: () => [evo(model, { count: count => count + 1 }), []],
-    }),
-  )
+	M.value(message).pipe(
+		withUpdateReturn,
+		M.tagsExhaustive({
+			ClickedIncrement: () => [evo(model, { count: count => count + 1 }), []],
+		}),
+	)
 ```
 
 Use `evo()` from `foldkit/struct` for immutable model updates. Never spread or `Object.assign`.
