@@ -123,6 +123,27 @@ is a demo of the graph it renders:
 - No file-watching / live reload of `.alchemy/state/` yet; re-run `bun run parse-alchemy`
   after each deploy.
 
+## Related projects
+
+`retort` is deliberately narrow: it reads local state and draws the binding
+graph. If you want a dashboard, look at these instead:
+
+- [alchemy-run/alchemy#1640](https://github.com/alchemy-run/alchemy/pull/1640) —
+  the official dashboard (draft): `alchemy dashboard`, `deploy --ui`, plan
+  approval and apply progress in the browser, hosted variants for Cloudflare
+  and AWS.
+- [pkishorez/monorepo — alchemy-console](https://github.com/pkishorez/monorepo/tree/main/apps/alchemy-console) —
+  a multi-store console for browsing remote state and safely deleting stages.
+
+Neither draws a dependency graph, and neither is built on Foldkit.
+
+## Versions
+
+Built and deployed against `alchemy` 2.0.0-beta.67 and `foldkit` 0.137.0
+(September 2026). Alchemy is still in beta and Foldkit is pre-1.0; both
+change quickly and nothing here has been re-tested against newer releases.
+If it stops working, pin to those versions.
+
 ## License
 
 MIT — see [LICENSE](./LICENSE).
